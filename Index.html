@@ -329,7 +329,7 @@ body.theme-5{--rose:#B5557A;--wine:#6B1F40;--parchment:#F7E4EC;}
   </div>
   <div class="hearts" id="prop-hearts">🌸 💌 🌸</div>
   <h1 class="big-q" id="prop-q">Quando vais sair<br/><em>comigo?</em></h1>
-  <p class="sub-q" id="prop-sub">Escolherá aonde iremos</p>
+  <p class="sub-q" id="prop-sub">Tu é que vais escolher</p>
   <div id="feedback-area" style="width:100%;max-width:420px;display:none;margin-bottom:1rem;">
     <div class="fb-card" id="fb-card">
       <div class="fb-title">Como <em>foi?</em></div>
@@ -351,7 +351,7 @@ body.theme-5{--rose:#B5557A;--wine:#6B1F40;--parchment:#F7E4EC;}
     <div class="choice-card" onclick="chooseDate()">
       <div class="c-icon">💑</div>
       <div class="c-label">Sair juntos</div>
-      <div class="c-sub">Planeia o nosso encontro perfeito</div>
+      <div class="c-sub">Aonde vai ser?</div>
     </div>
     <div class="choice-card locked-card" id="quiz-choice-card" onclick="tryQuiz()">
       <div class="c-icon" id="quiz-card-icon">🔒</div>
@@ -367,8 +367,8 @@ body.theme-5{--rose:#B5557A;--wine:#6B1F40;--parchment:#F7E4EC;}
 <!-- ░░ S2 — YEAH (planner) ░░ -->
 <div class="screen out gone" id="s-yeah">
   <div class="yes-emoji">🎉</div>
-  <h1 class="yes-h">Finalmente!<em>Boa escolha!</em></h1>
-  <p class="yes-p">Decida! Estou a espera ✨</p>
+  <h1 class="yes-h">Finalmente<em>Boa escolha!</em></h1>
+  <p class="yes-p">Tu decides. Estou a espera ✨</p>
   <button class="cta-btn" onclick="startPlanner()">Eu escolho →</button>
 </div>
 
@@ -380,7 +380,8 @@ body.theme-5{--rose:#B5557A;--wine:#6B1F40;--parchment:#F7E4EC;}
   <div class="code-box">
     <div class="code-label">Código secreto para ela</div>
     <div class="code-digits" id="plan-code">—</div>
-    <div class="code-hint">Mostra este código a ela para ver os detalhes</div>
+    <div class="code-hint">Envia este código + o ID abaixo para ela</div>
+    <div style="margin-top:.5rem;font-size:11px;color:var(--muted);">ID do cofre: <strong id="bin-id-display" style="color:var(--wine);letter-spacing:.05em;">—</strong></div>
   </div>
   <div class="wait-dots"><div class="wd"></div><div class="wd"></div><div class="wd"></div></div>
   <p style="font-size:11px;color:var(--muted);font-style:italic;">Podes fechar esta janela ♡</p>
@@ -389,7 +390,7 @@ body.theme-5{--rose:#B5557A;--wine:#6B1F40;--parchment:#F7E4EC;}
 <!-- ░░ S4 — QUIZ YEAH ░░ -->
 <div class="screen out gone" id="s-quiz-yeah">
   <div class="yes-emoji">🧠</div>
-  <h1 class="yes-h">Quiz do <em>conhecimento!</em></h1>
+  <h1 class="yes-h">Quiz do <em>amor!</em></h1>
   <p class="yes-p">Vamos ver o quanto me conheces realmente. Sem batota! 👀</p>
   <button class="cta-btn" onclick="startQuizGame()">Estou pronto! →</button>
 </div>
@@ -403,7 +404,8 @@ body.theme-5{--rose:#B5557A;--wine:#6B1F40;--parchment:#F7E4EC;}
   <div class="code-box" style="margin-bottom:1rem;">
     <div class="code-label">Código secreto para ela</div>
     <div class="code-digits" id="quiz-code">—</div>
-    <div class="code-hint">Mostra este código a ela para ver os resultados</div>
+    <div class="code-hint">Envia este código + o ID do cofre para ela</div>
+    <div style="margin-top:.5rem;font-size:11px;color:var(--muted);">ID do cofre: <strong id="quiz-bin-id-display" style="color:var(--wine);letter-spacing:.05em;">—</strong></div>
   </div>
   <p style="font-size:11px;color:var(--muted);font-style:italic;margin-top:.5rem;">Podes fechar esta janela ♡</p>
 </div>
@@ -414,6 +416,7 @@ body.theme-5{--rose:#B5557A;--wine:#6B1F40;--parchment:#F7E4EC;}
   <h1 class="yes-h" style="margin-bottom:.4rem;">Código <em>secreto</em></h1>
   <p class="yes-p">Introduz o código que ele te mostrou</p>
   <input class="code-input" id="code-input" type="text" maxlength="4" placeholder="0000" oninput="this.value=this.value.replace(/\D/g,'')"/>
+  <input type="text" id="bin-id-input" style="margin-top:.75rem;width:220px;text-align:center;padding:8px 12px;border:1.5px solid rgba(196,130,106,.3);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:12px;background:#fff;outline:none;color:var(--ink);" placeholder="ID do cofre (ex: 6abc123...)"/>
   <p id="code-err"></p>
   <button class="cta-btn" style="margin-top:1rem;" onclick="unlockCode()">Ver resultados →</button>
 </div>
@@ -637,17 +640,99 @@ function hidePlanner(){document.getElementById('scroll-shell').style.display='';
 function hideQuizGame(){document.getElementById('quiz-game-screen').style.display='';}
 function enterWithAnim(el){el.classList.add('step-enter');setTimeout(function(){el.classList.remove('step-enter');},400);}
 
-// ══ CODE ══
+// ══ CODE (JSONBin — master bin) ══
+var JKEY = '$2a$10$ShUW98UASQdr5nUHZELHFO9p4RChXq8htZgf3A8NwGhd3i2OR14Va';
+var JURL = 'https://api.jsonbin.io/v3/b';
+var MASTER_BIN = null; // will be set after first save or load
+
 function genCode(){return String(Math.floor(1000+Math.random()*9000));}
-function saveCode(code,data){try{var all=JSON.parse(localStorage.getItem('codes')||'{}');all[code]=data;localStorage.setItem('codes',JSON.stringify(all));}catch(e){}}
-function loadCode(code){try{var all=JSON.parse(localStorage.getItem('codes')||'{}');return all[code]||null;}catch(e){return null;}}
+
+// Get or create the master bin ID
+function getMasterBin(callback){
+  // Try localStorage first
+  var stored = localStorage.getItem('master_bin_id');
+  if(stored){callback(stored);return;}
+  // Create a new master bin
+  fetch(JURL, {
+    method:'POST',
+    headers:{'Content-Type':'application/json','X-Master-Key':JKEY,'X-Bin-Name':'encontros_master','X-Bin-Private':'false'},
+    body:JSON.stringify({codes:{}})
+  }).then(function(r){return r.json();})
+  .then(function(res){
+    var id = res.metadata && res.metadata.id;
+    if(id){localStorage.setItem('master_bin_id',id);callback(id);}
+    else{callback(null);}
+  }).catch(function(){callback(null);});
+}
+
+function saveCode(code, data){
+  data.code = code;
+  // Also save locally
+  try{var all=JSON.parse(localStorage.getItem('codes')||'{}');all[code]=data;localStorage.setItem('codes',JSON.stringify(all));}catch(e){}
+  // Save to JSONBin
+  getMasterBin(function(binId){
+    if(!binId)return;
+    // First read current data
+    fetch(JURL+'/'+binId+'/latest',{headers:{'X-Master-Key':JKEY}})
+    .then(function(r){return r.json();})
+    .then(function(res){
+      var current = (res.record && res.record.codes) ? res.record : {codes:{}};
+      current.codes[code] = data;
+      // Update bin
+      return fetch(JURL+'/'+binId, {
+        method:'PUT',
+        headers:{'Content-Type':'application/json','X-Master-Key':JKEY},
+        body:JSON.stringify(current)
+      });
+    }).catch(function(e){console.log('JSONBin save error',e);});
+  });
+}
+
+function loadCode(code, callback){
+  getMasterBin(function(binId){
+    if(!binId){
+      // Fallback localStorage
+      try{var all=JSON.parse(localStorage.getItem('codes')||'{}');callback(all[code]||null);}catch(e){callback(null);}
+      return;
+    }
+    fetch(JURL+'/'+binId+'/latest',{headers:{'X-Master-Key':JKEY}})
+    .then(function(r){return r.json();})
+    .then(function(res){
+      var data = res.record && res.record.codes && res.record.codes[code];
+      if(data){callback(data);}
+      else{
+        // Fallback localStorage
+        try{var all=JSON.parse(localStorage.getItem('codes')||'{}');callback(all[code]||null);}catch(e){callback(null);}
+      }
+    }).catch(function(){
+      try{var all=JSON.parse(localStorage.getItem('codes')||'{}');callback(all[code]||null);}catch(e){callback(null);}
+    });
+  });
+}
+
+function shareCode(code){
+  // Share the master bin ID so other device can access same bin
+  var binId = localStorage.getItem('master_bin_id');
+  if(binId) localStorage.setItem('shared_bin_'+code, binId);
+}
+
 function showCodeEntry(){showScreen('code-entry-screen');document.getElementById('code-err').textContent='';document.getElementById('code-input').value='';}
+
 function unlockCode(){
   var code=document.getElementById('code-input').value.trim();
   if(code.length!==4){document.getElementById('code-err').textContent='Código de 4 dígitos!';return;}
-  var data=loadCode(code);
-  if(!data){document.getElementById('code-err').textContent='Código inválido. Tenta de novo!';playWrong();return;}
-  playOk();showSenderView(data);
+  // If bin ID provided, store it so loadCode can use it
+  var binInput=document.getElementById('bin-id-input');
+  if(binInput&&binInput.value.trim()){
+    localStorage.setItem('master_bin_id', binInput.value.trim());
+  }
+  var errEl=document.getElementById('code-err');
+  errEl.textContent='A procurar... 🔍';
+  loadCode(code, function(data){
+    if(!data){errEl.textContent='Código inválido. Tenta de novo!';playWrong();return;}
+    errEl.textContent='';
+    playOk();showSenderView(data);
+  });
 }
 
 // ══ MILESTONE ══
@@ -1047,6 +1132,12 @@ function submitPlan(){
   showScreen('s-waiting');
   playWin();spawnConfetti(false);
   checkQuizLock();applyMilestone();
+  // Show bin ID after a moment
+  setTimeout(function(){
+    var bid=localStorage.getItem('master_bin_id')||'(a carregar...)';
+    var el=document.getElementById('bin-id-display');
+    if(el)el.textContent=bid;
+  },2000);
 }
 
 // ══ QUIZ GAME ══
@@ -1134,6 +1225,11 @@ function showQGResults(){
   saveCode(code,{type:'quiz',score:qgScore,total:total,emoji:emoji,title:title,msg:msg,code:code});
   document.getElementById('quiz-code').textContent=code;
   showScreen('s-quiz-results');playWin();spawnConfetti(false);
+  setTimeout(function(){
+    var bid=localStorage.getItem('master_bin_id')||'(a carregar...)';
+    var el=document.getElementById('quiz-bin-id-display');
+    if(el)el.textContent=bid;
+  },2000);
 }
 
 // ══ SENDER VIEW ══
