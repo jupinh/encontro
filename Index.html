@@ -391,6 +391,10 @@ body::before{content:'';position:fixed;inset:0;
 #reply-box-wrap .fb-textarea{background:var(--surface2);color:var(--text-dark);}
 
 @media(max-width:400px){.cards-stage{width:272px;height:355px;}.choice-card{width:128px;}}
+
+.enc-reschedule-btn{background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px;border-radius:6px;transition:all .15s;opacity:.5;}
+.enc-reschedule-btn:hover{opacity:1;background:var(--purple-dim);}
+
 </style>
 </head>
 <body>
@@ -402,8 +406,8 @@ body::before{content:'';position:fixed;inset:0;
 <!-- ░░ S1 — PROPOSTA ░░ -->
 <div class="screen" id="s-proposal" style="overflow-y:auto;justify-content:flex-start;padding:2rem 1.5rem 3rem;">
   <div class="hearts" id="prop-hearts">🌸 💌 🌸</div>
-  <h1 class="big-q" id="prop-q">Quando vais sair<br/><em>comigo?</em></h1>
-  <p class="sub-q" id="prop-sub">Escolhe o que preferíamos fazer</p>
+  <h1 class="big-q" id="prop-q">Queres sair<br/><em>comigo?</em></h1>
+  <p class="sub-q" id="prop-sub">escolhe o que preferes fazer</p>
   <div id="feedback-area" style="width:100%;max-width:420px;display:none;margin-bottom:1rem;">
     <div class="fb-card" id="fb-card">
       <div class="fb-title">Como <em>foi?</em></div>
@@ -425,7 +429,7 @@ body::before{content:'';position:fixed;inset:0;
     <div class="choice-card" onclick="chooseDate()">
       <div class="c-icon">💑</div>
       <div class="c-label">Sair juntos</div>
-      <div class="c-sub">Planeia o nosso encontro</div>
+      <div class="c-sub">Planeia o nosso encontro perfeito</div>
     </div>
     <div class="choice-card locked-card" id="quiz-choice-card" onclick="tryQuiz()">
       <div class="c-icon" id="quiz-card-icon">🔒</div>
@@ -449,6 +453,8 @@ body::before{content:'';position:fixed;inset:0;
     <div class="ms-label" id="ms-label">1.º Encontro</div>
     <div class="ms-phrase" id="ms-phrase"></div>
   </div>
+
+
 
   <div id="gallery-card" class="gallery-card locked" style="display:none;margin-top:.75rem;">
     <div class="gallery-card-header" onclick="openGalleryCard()">
@@ -887,6 +893,168 @@ function unlockCode(){
 }
 
 
+
+// ══ RESCHEDULE ══
+var rescheduleNum = null;
+var MONTHS_PT_NUM = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+
+function openRescheduleMain(){
+  // Find the next upcoming encounter number
+  var n = getCompletedCount();
+  openReschedule(n > 0 ? n : 1);
+}
+
+function openReschedule(num){
+  rescheduleNum = num;
+  document.getElementById('reschedule-reason').value='';
+  document.getElementById('reschedule-reason-err').style.display='none';
+  document.getElementById('reschedule-reason').style.borderColor='';
+  samePlaceChoice = null;
+  var btnStyle='flex:1;padding:9px;border:1.5px solid var(--border);border-radius:10px;background:var(--surface2);font-size:12px;color:var(--text-dark);cursor:pointer;transition:all .15s;';
+  document.getElementById('same-place-yes').style.cssText=btnStyle;
+  document.getElementById('same-place-no').style.cssText=btnStyle;
+  document.getElementById('new-place-input').style.display='none';
+  document.getElementById('new-place-input').value='';
+  // Pre-fill with current date if available
+  try{
+    var all = JSON.parse(localStorage.getItem('codes')||'{}');
+    var plans = Object.values(all).filter(function(d){return d.type==='plan';});
+    var plan = plans[num-1];
+    if(plan && plan.when){
+      var d = parsePTDate(plan.when);
+      if(d){
+        var y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), dd=String(d.getDate()).padStart(2,'0');
+        document.getElementById('reschedule-date').value = y+'-'+m+'-'+dd;
+      }
+    }
+  }catch(e){}
+  document.getElementById('reschedule-modal').style.display='flex';
+}
+
+var samePlaceChoice = null;
+
+function setSamePlace(yes){
+  samePlaceChoice = yes;
+  var btnYes = document.getElementById('same-place-yes');
+  var btnNo = document.getElementById('same-place-no');
+  var newPlace = document.getElementById('new-place-input');
+  if(yes){
+    btnYes.style.background='var(--purple)';btnYes.style.color='#fff';btnYes.style.borderColor='var(--purple)';
+    btnNo.style.background='var(--surface2)';btnNo.style.color='var(--text-dark)';btnNo.style.borderColor='var(--border)';
+    newPlace.style.display='none';
+  } else {
+    btnNo.style.background='var(--purple)';btnNo.style.color='#fff';btnNo.style.borderColor='var(--purple)';
+    btnYes.style.background='var(--surface2)';btnYes.style.color='var(--text-dark)';btnYes.style.borderColor='var(--border)';
+    newPlace.style.display='block';newPlace.focus();
+  }
+}
+
+function closeReschedule(){
+  document.getElementById('reschedule-modal').style.display='none';
+  rescheduleNum = null;
+  samePlaceChoice = null;
+}
+
+function confirmReschedule(){
+  var dateVal = document.getElementById('reschedule-date').value;
+  var timeVal = document.getElementById('reschedule-time').value;
+  var reason = document.getElementById('reschedule-reason').value.trim();
+  var errEl = document.getElementById('reschedule-reason-err');
+  if(!dateVal){ toast('Escolhe uma data!'); return; }
+  if(!reason){ errEl.style.display='block'; document.getElementById('reschedule-reason').style.borderColor='var(--purple)'; document.getElementById('reschedule-reason').focus(); return; }
+  errEl.style.display='none';
+  var d = new Date(dateVal+'T12:00:00');
+  var newWhen = d.getDate()+' de '+MONTHS_PT_NUM[d.getMonth()]+' de '+d.getFullYear()+(timeVal?' às '+timeVal:'');
+  var newPlace = document.getElementById('new-place-input').value.trim();
+  var placeInfo = samePlaceChoice === false ? (newPlace || 'Local a definir') : 'Mesmo local';
+  var rescData = {when: newWhen, reason: reason, place: placeInfo, ts: Date.now()};
+  // Save rescheduled info
+  try{
+    var all = JSON.parse(localStorage.getItem('codes')||'{}');
+    var planKeys = Object.keys(all).filter(function(k){return all[k].type==='plan';});
+    var key = planKeys[rescheduleNum-1];
+    if(key){
+      all[key].when = newWhen;
+      if(!all[key].reschedules) all[key].reschedules = [];
+      all[key].reschedules.push(rescData);
+      localStorage.setItem('codes', JSON.stringify(all));
+    }
+  }catch(e){}
+  // Update JSONBin
+  getMasterBin(function(binId){
+    if(!binId) return;
+    fetch('https://api.jsonbin.io/v3/b/'+binId+'/latest',{headers:{'X-Master-Key':JKEY}})
+    .then(function(r){return r.json();})
+    .then(function(res){
+      var cur = res.record || {codes:{}};
+      var planKeys2 = Object.keys(cur.codes||{}).filter(function(k){return cur.codes[k].type==='plan';});
+      var key2 = planKeys2[rescheduleNum-1];
+      if(key2){
+        cur.codes[key2].when = newWhen;
+        if(!cur.codes[key2].reschedules) cur.codes[key2].reschedules=[];
+        cur.codes[key2].reschedules.push(rescData);
+      }
+      return fetch('https://api.jsonbin.io/v3/b/'+binId,{method:'PUT',headers:{'Content-Type':'application/json','X-Master-Key':JKEY},body:JSON.stringify(cur)});
+    }).catch(function(){});
+  });
+  // Save reschedule notification for sender view
+  try{
+    var notifs = JSON.parse(localStorage.getItem('reschedule_notifs')||'[]');
+    notifs.push({num:rescheduleNum, when:newWhen, reason:reason, place:placeInfo, code:rescCode, ts:Date.now(), seen:false});
+    localStorage.setItem('reschedule_notifs', JSON.stringify(notifs));
+  }catch(e){}
+  // Generate code and save for sender view
+  var rescCode = genCode();
+  var rescPayload = {type:'reschedule', num:rescheduleNum, when:newWhen, place:placeInfo, reason:reason, code:rescCode, ts:Date.now()};
+  saveCode(rescCode, rescPayload);
+
+  closeReschedule();
+  playOk();
+  renderEncTimeline();
+  showRescNotif(newWhen, reason, rescData, rescCode);
+}
+
+function showRescNotif(when, reason, rData){
+  var rescData = rData || {};
+  var notif = document.getElementById('resc-notif');
+  var placeText = (rescData && rescData.place && rescData.place !== 'Mesmo local') ? ' · '+rescData.place : '';
+  document.getElementById('resc-notif-text').textContent = 'Nova data: '+when+placeText+' — "'+reason+'"';
+  notif.style.transform = 'translateX(-50%) translateY(0)';
+  clearTimeout(window._rescNotifTimer);
+  window._rescNotifTimer = setTimeout(function(){ closeRescNotif(); }, 6000);
+}
+
+function closeRescNotif(){
+  document.getElementById('resc-notif').style.transform = 'translateX(-50%) translateY(-200px)';
+}
+
+function copyRescCode(){
+  var txt = document.getElementById('resc-notif-text').innerText;
+  var msg = '\uD83D\uDCC5 Reagendei o nosso encontro!\n\n'+txt+'\n\nIntroduz o c\u00f3digo e o ID no site para veres os detalhes \uD83D\uDC9C';
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(msg);
+  } else {
+    var ta=document.createElement('textarea');ta.value=msg;
+    document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
+  }
+  toast('Copiado! Envia \u00e0 ela \uD83D\uDC9C');
+}
+
+function checkRescheduleNotifs(){
+  // Show notification if there are unseen reschedules (for sender view)
+  try{
+    var notifs = JSON.parse(localStorage.getItem('reschedule_notifs')||'[]');
+    var unseen = notifs.filter(function(n){return !n.seen;});
+    if(unseen.length > 0){
+      var latest = unseen[unseen.length-1];
+      setTimeout(function(){ showRescNotif(latest.when, latest.reason, {place:latest.place}, latest.code); }, 1000);
+      // Mark as seen
+      notifs.forEach(function(n){n.seen=true;});
+      localStorage.setItem('reschedule_notifs', JSON.stringify(notifs));
+    }
+  }catch(e){}
+}
+
 // ══ ENCOUNTERS TIMELINE ══
 var ENC_LABELS = [
   '"O início de algo bonito..." 🌸',
@@ -926,9 +1094,17 @@ function buildEncCard(num, completed){
   card.id = 'enc-card-'+num;
 
   var numClass = isDone?'done':isCurrent?'next':'locked';
+  // Get date for this encounter if available
+  var encDateStr = '';
+  try{
+    var allCodes = JSON.parse(localStorage.getItem('codes')||'{}');
+    var plansArr = Object.values(allCodes).filter(function(d){return d.type==='plan';});
+    if(plansArr[num-1] && plansArr[num-1].when) encDateStr = plansArr[num-1].when.split(' às')[0];
+  }catch(e){}
+
   var sub = isLocked
     ? (num===1?'Faz o primeiro encontro para desbloquear!':'Desbloqueia após o '+num+'º encontro')
-    : ENC_LABELS[num-1];
+    : (encDateStr ? encDateStr : ENC_LABELS[num-1]);
 
   card.innerHTML =
     '<div class="enc-card-header" onclick="'+(isLocked?'':'toggleEncCard('+num+')')+'">'
@@ -1103,6 +1279,9 @@ function applyMilestone(){
   var n=getCompletedCount();
   renderEncTimeline();
   renderGalleryCard();
+  // Show reschedule button if there's at least 1 planned encounter
+  var rescBtn = document.getElementById('reschedule-fab');
+  if(rescBtn) rescBtn.style.display = n > 0 ? 'flex' : 'none';
   if(n===0)return;
   var t=THEMES[Math.min(n-1,THEMES.length-1)];
   var banner=document.getElementById('ms-banner');
@@ -1763,7 +1942,7 @@ function submitPlan(){
   // After 4 seconds, go back to proposal page
   setTimeout(function(){
     showScreen('s-proposal');
-    checkQuizLock();applyMilestone();renderGalleryCard();
+    checkQuizLock();applyMilestone();renderGalleryCard();checkRescheduleNotifs();
   }, 4000);renderGalleryCard();
   // Show bin ID after a moment
   setTimeout(function(){
@@ -1992,6 +2171,19 @@ function showSenderView(data){
       box.appendChild(d);
     }
 
+  }else if(data.type==='reschedule'){
+    document.getElementById('sender-mode-tag').textContent='✦ encontro reagendado ✦';
+    document.getElementById('sender-desc').textContent='Ele reagendou o encontro 📅';
+    var rows2=[
+      {ico:'📅',lbl:'Nova data',val:data.when},
+      {ico:'📍',lbl:'Local',val:data.place||'Mesmo local'},
+      {ico:'💬',lbl:'Motivo',val:'"'+data.reason+'"'},
+    ];
+    rows2.forEach(function(r){
+      var d=document.createElement('div');d.className='sum-row';
+      d.innerHTML='<div class="sum-ico">'+r.ico+'</div><div><div class="sum-lbl">'+r.lbl+'</div><div class="sum-val">'+r.val+'</div></div>';
+      box.appendChild(d);
+    });
   }else if(data.type==='quiz'){
     document.getElementById('sender-mode-tag').textContent='✦ quiz sobre ti ✦';
     document.getElementById('sender-desc').textContent='O que ele pensa de ti — resposta a resposta 💜';
@@ -2059,6 +2251,12 @@ function copyText(){
       });
     }
     lines.push('💕');
+  }else if(copyData.type==='reschedule'){
+    lines=['📅 ENCONTRO REAGENDADO 📅','',
+      '🗓️ Nova data: '+copyData.when,
+      '📍 Local: '+(copyData.place||'Mesmo local'),
+      '💬 Motivo: "'+copyData.reason+'"',
+      '','💜'];
   }else if(copyData.type==='feedback'){
     var stars='';for(var i=0;i<copyData.rating;i++){stars+='★';}
     lines=['💬 FEEDBACK DO ENCONTRO 💬','',''+stars,'',''+copyData.text,'','💕'];
@@ -2101,6 +2299,59 @@ function toast(msg){var el=document.getElementById('toast');el.textContent=msg;e
       <button class="optin-no" onclick="skipQuizOptin()">Não, prefiro avançar →</button>
     </div>
   </div>
+</div>
+
+
+<!-- ░░ FLOATING RESCHEDULE BTN ░░ -->
+<button id="reschedule-fab" onclick="openRescheduleMain()" style="display:none;position:fixed;bottom:1.5rem;right:1.5rem;z-index:400;background:var(--purple);color:#fff;border:none;border-radius:50px;padding:11px 18px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;box-shadow:0 4px 20px rgba(124,58,237,.4);transition:all .2s;display:flex;align-items:center;gap:7px;">
+  <span>📅</span> Editar data
+</button>
+
+<!-- ░░ RESCHEDULE MODAL ░░ -->
+<div id="reschedule-modal" style="position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.8);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;padding:1.5rem;">
+  <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:22px;padding:1.75rem 1.5rem;max-width:340px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5);">
+    <div style="font-size:36px;margin-bottom:.75rem;">📅</div>
+    <h2 style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:300;color:var(--text-dark);margin-bottom:.25rem;">Reagendar <em style="font-style:italic;color:var(--purple);">encontro</em></h2>
+    <p style="font-size:12px;color:var(--text3);margin-bottom:1.1rem;line-height:1.5;">Surgiu um imprevisto? Preenche os campos abaixo.</p>
+    <div style="margin-bottom:.65rem;text-align:left;">
+      <label style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);display:block;margin-bottom:4px;">Nova data</label>
+      <input type="date" id="reschedule-date" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-dark);background:var(--surface2);outline:none;"/>
+    </div>
+    <div style="margin-bottom:.65rem;text-align:left;">
+      <label style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);display:block;margin-bottom:4px;">Nova hora</label>
+      <input type="time" id="reschedule-time" value="20:00" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-dark);background:var(--surface2);outline:none;"/>
+    </div>
+    <div style="margin-bottom:.65rem;text-align:left;">
+      <label style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);display:block;margin-bottom:.5rem;">O local continua o mesmo?</label>
+      <div style="display:flex;gap:.5rem;">
+        <button id="same-place-yes" onclick="setSamePlace(true)" style="flex:1;padding:9px;border:1.5px solid var(--border);border-radius:10px;background:var(--surface2);font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-dark);cursor:pointer;transition:all .15s;">✓ Sim, mesmo local</button>
+        <button id="same-place-no" onclick="setSamePlace(false)" style="flex:1;padding:9px;border:1.5px solid var(--border);border-radius:10px;background:var(--surface2);font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-dark);cursor:pointer;transition:all .15s;">✗ Não, vai mudar</button>
+      </div>
+      <input type="text" id="new-place-input" placeholder="Novo local..." maxlength="100" style="display:none;width:100%;margin-top:.5rem;padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-dark);background:var(--surface2);outline:none;"/>
+    </div>
+    <div style="margin-bottom:1rem;text-align:left;">
+      <label style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);display:block;margin-bottom:4px;">Motivo do reagendamento <span style="color:var(--purple);">*</span></label>
+      <textarea id="reschedule-reason" placeholder="Ex: Surgiu um imprevisto no trabalho..." maxlength="200" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-dark);background:var(--surface2);outline:none;resize:none;height:72px;transition:border .18s;"></textarea>
+      <p id="reschedule-reason-err" style="font-size:11px;color:var(--purple);margin-top:3px;display:none;">⚠️ O motivo é obrigatório.</p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:.5rem;">
+      <button onclick="confirmReschedule()" style="padding:11px;background:var(--purple);color:#fff;border:none;border-radius:50px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;">Guardar nova data ✓</button>
+      <button onclick="closeReschedule()" style="padding:9px;background:none;color:var(--text3);border:1.5px solid var(--border);border-radius:50px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ░░ RESCHEDULE NOTIFICATION ░░ -->
+<div id="resc-notif" style="position:fixed;top:1rem;left:50%;transform:translateX(-50%) translateY(-200px);z-index:999;background:var(--surface);border:1.5px solid var(--purple);border-radius:16px;padding:.85rem 1.25rem;max-width:340px;width:90%;box-shadow:0 8px 30px rgba(124,58,237,.25);transition:transform .4s cubic-bezier(.34,1.56,.64,1);">
+  <div style="display:flex;gap:.75rem;align-items:flex-start;margin-bottom:.5rem;">
+    <div style="font-size:22px;flex-shrink:0;">📅</div>
+    <div style="flex:1;">
+      <div style="font-size:13px;font-weight:500;color:var(--text-dark);margin-bottom:2px;">Encontro reagendado</div>
+      <div id="resc-notif-text" style="font-size:12px;color:var(--text3);line-height:1.6;"></div>
+    </div>
+    <button onclick="closeRescNotif()" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px;flex-shrink:0;padding:0;">✕</button>
+  </div>
+  <button onclick="copyRescCode()" style="width:100%;padding:8px;background:var(--purple);color:#fff;border:none;border-radius:10px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;margin-top:.25rem;">📋 Copiar código + ID para enviar</button>
 </div>
 
 </body>
