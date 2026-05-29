@@ -1028,17 +1028,7 @@ function closeRescNotif(){
   document.getElementById('resc-notif').style.transform = 'translateX(-50%) translateY(-200px)';
 }
 
-function copyRescCode(){
-  var txt = document.getElementById('resc-notif-text').innerText;
-  var msg = '\uD83D\uDCC5 Reagendei o nosso encontro!\n\n'+txt+'\n\nIntroduz o c\u00f3digo e o ID no site para veres os detalhes \uD83D\uDC9C';
-  if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(msg);
-  } else {
-    var ta=document.createElement('textarea');ta.value=msg;
-    document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
-  }
-  toast('Copiado! Envia \u00e0 ela \uD83D\uDC9C');
-}
+
 
 function checkRescheduleNotifs(){
   // Show notification if there are unseen reschedules (for sender view)
@@ -2341,17 +2331,38 @@ function toast(msg){var el=document.getElementById('toast');el.textContent=msg;e
   </div>
 </div>
 
-<!-- ░░ RESCHEDULE NOTIFICATION ░░ -->
+<!-- ░░ RESCHEDULE SUCCESS SCREEN ░░ -->
+<div id="resc-success-screen" style="position:fixed;inset:0;z-index:700;background:var(--bg);display:none;flex-direction:column;align-items:center;justify-content:center;padding:2rem;text-align:center;">
+  <div style="font-size:48px;margin-bottom:1rem;">📅</div>
+  <h2 style="font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;color:var(--text);margin-bottom:.4rem;">Reagendado <em style="font-style:italic;color:var(--purple-light);">com sucesso!</em></h2>
+  <p style="font-size:13px;color:var(--text2);margin-bottom:1.5rem;line-height:1.6;max-width:300px;">Envia os dois códigos abaixo para ela ver os detalhes da nova data.</p>
+
+  <div style="background:var(--surface);border:1.5px solid var(--purple);border-radius:18px;padding:1.25rem 1.5rem;width:100%;max-width:340px;margin-bottom:1rem;text-align:left;">
+    <p style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:.35rem;">Código secreto</p>
+    <p id="resc-code-display" style="font-family:'Cormorant Garamond',serif;font-size:42px;color:var(--purple-light);letter-spacing:.2em;line-height:1;margin-bottom:.5rem;">—</p>
+    <p style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:.35rem;">ID do cofre</p>
+    <p id="resc-binid-display" style="font-size:12px;color:var(--text2);word-break:break-all;line-height:1.5;">—</p>
+  </div>
+
+  <div style="background:var(--surface2);border:1.5px solid var(--border);border-radius:14px;padding:1rem 1.25rem;width:100%;max-width:340px;margin-bottom:1.25rem;text-align:left;">
+    <p style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:.5rem;">Resumo</p>
+    <p id="resc-summary-display" style="font-size:13px;color:var(--text-dark);line-height:1.6;"></p>
+  </div>
+
+  <button id="resc-copy-all-btn" onclick="copyAllRescInfo()" style="width:100%;max-width:340px;padding:13px;background:var(--purple);color:#fff;border:none;border-radius:50px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;margin-bottom:.65rem;box-shadow:0 4px 20px rgba(124,58,237,.3);">📋 Copiar tudo para enviar</button>
+  <button onclick="closeRescSuccess()" style="background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;">Fechar</button>
+</div>
+
+<!-- ░░ RESCHEDULE NOTIFICATION (small, for her side) ░░ -->
 <div id="resc-notif" style="position:fixed;top:1rem;left:50%;transform:translateX(-50%) translateY(-200px);z-index:999;background:var(--surface);border:1.5px solid var(--purple);border-radius:16px;padding:.85rem 1.25rem;max-width:340px;width:90%;box-shadow:0 8px 30px rgba(124,58,237,.25);transition:transform .4s cubic-bezier(.34,1.56,.64,1);">
-  <div style="display:flex;gap:.75rem;align-items:flex-start;margin-bottom:.5rem;">
-    <div style="font-size:22px;flex-shrink:0;">📅</div>
+  <div style="display:flex;gap:.75rem;align-items:flex-start;">
+    <div style="font-size:20px;flex-shrink:0;">📅</div>
     <div style="flex:1;">
       <div style="font-size:13px;font-weight:500;color:var(--text-dark);margin-bottom:2px;">Encontro reagendado</div>
-      <div id="resc-notif-text" style="font-size:12px;color:var(--text3);line-height:1.6;"></div>
+      <div id="resc-notif-text" style="font-size:12px;color:var(--text3);line-height:1.5;"></div>
     </div>
     <button onclick="closeRescNotif()" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px;flex-shrink:0;padding:0;">✕</button>
   </div>
-  <button onclick="copyRescCode()" style="width:100%;padding:8px;background:var(--purple);color:#fff;border:none;border-radius:10px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;margin-top:.25rem;">📋 Copiar código + ID para enviar</button>
 </div>
 
 </body>
